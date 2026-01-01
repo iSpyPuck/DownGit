@@ -135,7 +135,14 @@ downGitModule.factory('downGitService', [
                 progress.isProcessing.val = false;
                 
                 // Create a blob from the response data
-                var blob = new Blob([response.data], {type: response.headers('content-type') || 'application/octet-stream'});
+                // Safely access content-type header, default to octet-stream if not available
+                var contentType = 'application/octet-stream';
+                try {
+                    contentType = response.headers('content-type') || contentType;
+                } catch(e) {
+                    // If headers function fails, use default
+                }
+                var blob = new Blob([response.data], {type: contentType});
                 
                 // Trigger download using FileSaver.js
                 saveAs(blob, repoInfo.downloadFileName);
@@ -176,6 +183,12 @@ downGitModule.factory('downGitService', [
                 }else{
                     // Check if it's a blob (file) URL - we can skip API check and directly download
                     if(repoInfo.pathType === "blob"){
+                        // Validate required fields for blob URLs
+                        if(!repoInfo.branch || !repoInfo.resPath){
+                            toastr.error("Invalid file URL. Missing branch or file path.", {iconClass: 'toast-down'});
+                            return;
+                        }
+                        
                         var rawUrl = "https://raw.githubusercontent.com/"+repoInfo.author+"/"+
                             repoInfo.repository+"/"+repoInfo.branch+"/"+repoInfo.resPath;
                         toastr.info("Downloading file...", {iconClass: 'toast-down'});
