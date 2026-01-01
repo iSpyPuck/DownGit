@@ -129,9 +129,10 @@ downGitModule.factory('downGitService', [
                 progress.isProcessing.val=false;
                 
                 // Get MIME type from response headers, fallback to octet-stream
+                // Note: AngularJS $http.headers() is case-insensitive
                 var contentType = file.headers('content-type') || 'application/octet-stream';
                 // Extract only the MIME type (before any semicolon for charset, etc.)
-                var mimeType = contentType ? contentType.split(';')[0].trim() : 'application/octet-stream';
+                var mimeType = contentType.split(';')[0].trim();
                 
                 // Create a blob from the file data and download it directly
                 var blob = new Blob([file.data], {type: mimeType});
