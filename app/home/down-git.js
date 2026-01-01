@@ -124,20 +124,9 @@ downGitModule.factory('downGitService', [
             progress.downloadedFiles.val = 0;
             progress.totalFiles.val = 1;
 
-            var zip = new JSZip();
-            $http.get(url, {responseType: "arraybuffer"}).then(function (file) {
-                progress.downloadedFiles.val = 1;
-                zip.file(repoInfo.rootName, file.data);
-
-                progress.isProcessing.val=false;
-                zip.generateAsync({type:"blob"}).then(function(content) {
-                    saveAs(content, repoInfo.downloadFileName+".zip");
-                });
-            }, function(error) {
-                console.log(error);
-                progress.isProcessing.val=false;
-                toastr.warning("Error! Server failure or wrong URL.", {iconClass: 'toast-down'});
-            });
+            // Redirect directly to the raw GitHub URL for direct download
+            // This allows Discord and other platforms to download the file directly
+            window.location = url;
         }
 
         return {
