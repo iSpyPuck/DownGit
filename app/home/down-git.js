@@ -124,15 +124,13 @@ downGitModule.factory('downGitService', [
             progress.downloadedFiles.val = 0;
             progress.totalFiles.val = 1;
 
-            var zip = new JSZip();
             $http.get(url, {responseType: "arraybuffer"}).then(function (file) {
                 progress.downloadedFiles.val = 1;
-                zip.file(repoInfo.rootName, file.data);
-
                 progress.isProcessing.val=false;
-                zip.generateAsync({type:"blob"}).then(function(content) {
-                    saveAs(content, repoInfo.downloadFileName+".zip");
-                });
+                
+                // Create a blob from the file data and download it directly
+                var blob = new Blob([file.data]);
+                saveAs(blob, repoInfo.rootName);
             }, function(error) {
                 console.log(error);
                 progress.isProcessing.val=false;
