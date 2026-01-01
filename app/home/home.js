@@ -30,7 +30,7 @@ homeModule.config([
                     $scope.downloadedFiles = {val: 0};
                     $scope.totalFiles = {val: 0};
 
-                    var templateUrl = "https?://github.com/.+/.+";
+                    var templateUrl = /^https?:\/\/github\.com\/[^\/]+\/[^\/]+/;
                     var downloadUrlInfix = "#/home?url=";
                     var downloadUrlPrefix = "https://minhaskamal.github.io/DownGit/"+downloadUrlInfix;
 
@@ -52,7 +52,7 @@ homeModule.config([
                         downGitService.downloadZippedFiles(parameter, progress, toastr);
 
                     } else if ($scope.url != "") {
-                        toastr.warning("Invalid URL!", {iconClass: 'toast-down'});
+                        toastr.error("Invalid GitHub URL! Please provide a valid URL like: https://github.com/owner/repo or https://github.com/owner/repo/tree/branch/path or https://github.com/owner/repo/blob/branch/file", {iconClass: 'toast-down'});
                     }
 
                     $scope.catchEnter = function(keyEvent) {
@@ -71,7 +71,7 @@ homeModule.config([
                         if ($scope.url.match(templateUrl)) {
                             $scope.downUrl = downloadUrlPrefix + $scope.url;
                         } else {
-                            toastr.warning("Invalid URL!", {iconClass: 'toast-down'});
+                            toastr.error("Invalid GitHub URL! Please provide a valid URL like: https://github.com/owner/repo or https://github.com/owner/repo/tree/branch/path or https://github.com/owner/repo/blob/branch/file", {iconClass: 'toast-down'});
                         }
                     };
 

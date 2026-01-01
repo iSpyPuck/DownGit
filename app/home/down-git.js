@@ -21,6 +21,10 @@ downGitModule.factory('downGitService', [
 
             info.author = splitPath[1];
             info.repository = splitPath[2];
+            
+            // splitPath[3] can be 'tree', 'blob', or empty
+            // splitPath[4] is the branch name
+            info.pathType = splitPath[3]; // 'tree' for directories, 'blob' for files
             info.branch = splitPath[4];
 
             info.rootName = splitPath[splitPath.length-1];
@@ -124,16 +128,41 @@ downGitModule.factory('downGitService', [
             progress.downloadedFiles.val = 0;
             progress.totalFiles.val = 1;
 
-            // Redirect directly to the raw GitHub URL for direct download
-            // This allows Discord and other platforms to download the file directly
-            window.location = url;
+            // Download the file using fetch and FileSaver.js to ensure it's downloaded
+            // rather than displayed in the browser
+            $http.get(url, {responseType: "arraybuffer"}).then(function (response) {
+                progress.downloadedFiles.val = 1;
+                progress.isProcessing.val = false;
+                
+                // Create a blob from the response data
+                var blob = new Blob([response.data], {type: response.headers('content-type') || 'application/octet-stream'});
+                
+                // Trigger download using FileSaver.js
+                saveAs(blob, repoInfo.downloadFileName);
+                
+                toastr.success("File downloaded successfully!", {iconClass: 'toast-down'});
+            }, function(error) {
+                progress.isProcessing.val = false;
+                console.error("Error downloading file:", error);
+                toastr.error("Failed to download file. The file may be too large or the URL may be invalid.", {iconClass: 'toast-down'});
+                
+                // Fallback: try opening the URL directly
+                window.location = url;
+            });
         }
 
         return {
             downloadZippedFiles: function(parameters, progress, toastr) {
                 repoInfo = parseInfo(parameters);
 
+                // Validate required fields
+                if(!repoInfo.author || !repoInfo.repository){
+                    toastr.error("Invalid GitHub URL. Please check the URL format.", {iconClass: 'toast-down'});
+                    return;
+                }
+
                 if(!repoInfo.resPath || repoInfo.resPath==""){
+                    // No specific path - download entire repository
                     if(!repoInfo.branch || repoInfo.branch==""){
                         repoInfo.branch="master";
                     }
@@ -141,21 +170,39 @@ downGitModule.factory('downGitService', [
                     var downloadUrl = "https://github.com/"+repoInfo.author+"/"+
                         repoInfo.repository+"/archive/"+repoInfo.branch+".zip";
 
+                    toastr.info("Downloading entire repository...", {iconClass: 'toast-down'});
                     window.location = downloadUrl;
 
                 }else{
+                    // Check if it's a blob (file) URL - we can skip API check and directly download
+                    if(repoInfo.pathType === "blob"){
+                        var rawUrl = "https://raw.githubusercontent.com/"+repoInfo.author+"/"+
+                            repoInfo.repository+"/"+repoInfo.branch+"/"+repoInfo.resPath;
+                        toastr.info("Downloading file...", {iconClass: 'toast-down'});
+                        downloadFile(rawUrl, progress, toastr);
+                        return;
+                    }
+                    
+                    // For tree (directory) URLs or unknown types, use API to check
                     $http.get(repoInfo.urlPrefix+repoInfo.resPath+repoInfo.urlPostfix).then(function(response) {
                         if(response.data instanceof Array){
+                            // It's a directory
+                            toastr.info("Preparing directory download...", {iconClass: 'toast-down'});
                             downloadDir(progress);
                         }else{
+                            // It's a file
+                            toastr.info("Downloading file...", {iconClass: 'toast-down'});
                             downloadFile(response.data.download_url, progress, toastr);
                         }
 
                     }, function(error) {
-                        console.log("probable big file.");
-                        downloadFile("https://raw.githubusercontent.com/"+repoInfo.author+"/"+
-                                repoInfo.repository+"/"+repoInfo.branch+"/"+repoInfo.resPath,
-                                progress, toastr);
+                        // API call failed - try constructing raw URL
+                        console.log("API call failed, constructing raw URL. Error:", error);
+                        var rawUrl = "https://raw.githubusercontent.com/"+repoInfo.author+"/"+
+                            repoInfo.repository+"/"+repoInfo.branch+"/"+repoInfo.resPath;
+                        
+                        toastr.warning("Direct API access failed, attempting direct download...", {iconClass: 'toast-down'});
+                        downloadFile(rawUrl, progress, toastr);
                     });
                 }
             },
