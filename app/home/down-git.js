@@ -128,8 +128,8 @@ downGitModule.factory('downGitService', [
                 progress.downloadedFiles.val = 1;
                 progress.isProcessing.val=false;
                 
-                // Get MIME type from response headers, fallback to empty string
-                var mimeType = file.headers('Content-Type') || '';
+                // Get MIME type from response headers, fallback to octet-stream
+                var mimeType = file.headers('content-type') || 'application/octet-stream';
                 
                 // Create a blob from the file data and download it directly
                 var blob = new Blob([file.data], {type: mimeType});
