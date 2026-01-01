@@ -131,7 +131,7 @@ downGitModule.factory('downGitService', [
                 // Get MIME type from response headers, fallback to octet-stream
                 var contentType = file.headers('content-type') || 'application/octet-stream';
                 // Extract only the MIME type (before any semicolon for charset, etc.)
-                var mimeType = contentType.split(';')[0].trim();
+                var mimeType = contentType ? contentType.split(';')[0].trim() : 'application/octet-stream';
                 
                 // Create a blob from the file data and download it directly
                 var blob = new Blob([file.data], {type: mimeType});
