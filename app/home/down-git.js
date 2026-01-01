@@ -124,24 +124,9 @@ downGitModule.factory('downGitService', [
             progress.downloadedFiles.val = 0;
             progress.totalFiles.val = 1;
 
-            $http.get(url, {responseType: "arraybuffer"}).then(function (file) {
-                progress.downloadedFiles.val = 1;
-                progress.isProcessing.val=false;
-                
-                // Get MIME type from response headers, fallback to octet-stream
-                // Note: AngularJS $http.headers() is case-insensitive
-                var contentType = file.headers('content-type') || 'application/octet-stream';
-                // Extract only the MIME type (before any semicolon for charset, etc.)
-                var mimeType = contentType.split(';')[0].trim();
-                
-                // Create a blob from the file data and download it directly
-                var blob = new Blob([file.data], {type: mimeType});
-                saveAs(blob, repoInfo.rootName);
-            }, function(error) {
-                console.log(error);
-                progress.isProcessing.val=false;
-                toastr.warning("Error! Server failure or wrong URL.", {iconClass: 'toast-down'});
-            });
+            // Redirect directly to the raw GitHub URL for direct download
+            // This allows Discord and other platforms to download the file directly
+            window.location = url;
         }
 
         return {
